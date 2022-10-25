@@ -1,6 +1,6 @@
 {-# LANGUAGE InstanceSigs #-}
 module BattleShip where
-
+--types
 type Size = Int
 type RowIndex = Char
 type ColIndex  = Int 
