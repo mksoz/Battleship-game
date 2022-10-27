@@ -65,7 +65,7 @@ checkB1Ships = checkSquares listships b1
 
 
 -- toEnum 65 :: Char = 'A'
--- (size Board, A::Int)
+-- (size Board, A::Int == 65)
 makeMatrixCoord ::(Int, Int) -> [[Coordinate]]
 makeMatrixCoord (0,_) = []
 makeMatrixCoord (x,90) = [[('Z', x)]]
@@ -104,16 +104,15 @@ compareShipVector ((len,a) : tail) s = (maxSize <= len, a) : compareShipVector t
                 maxSize = maximum.untuple $ getSizes s
 
 availableSpace :: (Coordinate, Axis) ->  Board b -> Bool 
-availableSpace ((r, c), a) b = 
+availableSpace ((r, c), a) (Board _ b) = 
         case a of
-                Xp -> foldr (||) False (drop c (matrixBoard !! charNum)) 
-                Xn -> foldr (||) False (take (c+1) (matrixBoard !! charNum))
-                Yn -> foldr (||) False (drop charNum (tmatrixBoard !! c))
-                Yp -> foldr (||) False (take (charNum+1) (tmatrixBoard !! c))
+                Xp -> foldr (||) False (drop c (b !! charNum)) 
+                Xn -> foldr (||) False (take (c+1) (b !! charNum))
+                Yn -> foldr (||) False (drop charNum (transposeBoard !! c))
+                Yp -> foldr (||) False (take (charNum+1) (transposeBoard !! c))
                 where
                         charNum = fromEnum r - 65
-                        matrixBoard = getSquares b
-                        tmatrixBoard = transpose matrixBoard
+                        transposeBoard = transpose b
 
 ------------------------TEST
 b3 =[[False, False, False, True, False],
@@ -131,14 +130,17 @@ availableYn = availableSpace (('C', 3), Yn) Board{getSquares = b3, getSize = 0}
 
 -- SOLVE PROBLEM OF 2 TYPES OF RETURN
 getAxisVectors :: (Coordinate, Axis) -> (Int, Board b)  -> [Coordinate]
-getAxisVectors ((r, c), a) (len,b) = 
+getAxisVectors ((r, c), a) (len, BoardCoord s b ) = 
         case a of
-                Xp -> drop len (matrixBoard !! rowChar)
-                Xn -> take len (matrixBoard !! rowChar)
-                Yn -> drop len (tmatrixBoard !! c)
-                Yp -> take len (tmatrixBoard !! c)
+                Xp -> take len (drop c takeRow)
+                Xn -> drop (c+1-len) (take (c+1) takeRow) 
+                Yn -> drop (c+1-len) (take (c+1) takeCol) 
+                Yp -> take len (drop c takeRow)
                 where
                         rowChar = fromEnum r - 65
-                        matrixBoard = getCoordSquares b
-                        tmatrixBoard = transpose matrixBoard
+                        transposeBoard = transpose b
+                        takeRow = b !! rowChar
+                        takeCol = transposeBoard !! c
 
+b4 = BoardCoord{getSizeCoord = 5, getCoordSquares = makeMatrixCoord (5, 65)}
+vectorXp= getAxisVectors (('B',2), Yn) (3,b4)
