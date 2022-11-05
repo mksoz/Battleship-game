@@ -1,4 +1,4 @@
-# Revision history for Haskell
+# Revision history for Battleship-game
 
 ## 0.1.0.0 -- YYYY-mm-dd
 
