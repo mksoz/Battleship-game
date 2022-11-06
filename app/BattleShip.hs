@@ -11,28 +11,35 @@ import Text.Read (readMaybe)
 --import Types
 type Size = Int
 type Coordinate = (Char, Int)
-
+type Row      = [Icon]
+type Squares  = [Row]
+data Icon = D  | W | S  deriving(Eq, Read, Show)
 
 data Axis = Xp | Xn | Yp | Yn deriving(Show, Eq, Ord)
 data Board = Board{ getSize   :: Size,
                        getSquares :: [[Bool]]}
                 | BoardCoord{ getSizeCoord   :: Size, getCoordSquares :: [[Coordinate]]} deriving(Show, Eq) 
-                       
+                    
 data Ship = Ship{ getSizes :: Size,
-                       getShipSquares :: [Bool]}
-                | ShipCoord{getShipSizesCoord :: Size, getShipCoordSquares:: [Coordinate]} deriving (Show, Eq)
+                       getShipSquares :: [Bool]} deriving (Show, Eq)
+data BoardColor = BoardColor{ getLength    :: Int
+                   , getIcons :: Squares
+                   }deriving(Show)
 
 listSizeShip = [5,3,4,2] 
 minBoardSize = 5
 maxBoardSize = 25
---
+symbol       = '*'
+addBlue      = "\ESC[36m" 
+addRed       = "\ESC[35m"
+addDefault   = "\ESC[0m"
+-- end Types
 
 makeBoard :: Size  -> Board 
 makeBoard s = Board{ getSize = smin
                     ,getSquares = replicate smin (replicate smin False)
                     }
             where smin = min maxBoardSize (max s minBoardSize)
-                        -- maximun between s and minBoardSize
 b1 = makeBoard 6
 
 makeBoardCoord :: Size  -> Board 
@@ -40,7 +47,6 @@ makeBoardCoord s = BoardCoord{ getSizeCoord = smin
                     ,getCoordSquares = makeMatrixCoord (smin,65)
                     }
             where smin = min maxBoardSize (max s minBoardSize)
-                        -- maximun between s and minBoardSize
 
 makeShip :: Size -> Ship 
 makeShip s = Ship { getSizes = s
@@ -49,16 +55,18 @@ makeShip s = Ship { getSizes = s
 
 listships = map makeShip listSizeShip
 
+makeBoardToPrint :: Size -> BoardColor
+makeBoardToPrint s = BoardColor{ getLength =s
+                   , getIcons = replicate s (replicate s D) 
+                   }
 
-checkSquares :: [Int] -> Board -> (Bool, [Char])
-checkSquares [] _ = (False, "No ships")
-checkSquares ls b = case compare ((^) (getSize b) 2) (sum ls) of
-                     LT -> (False, "More ships area than board area")
-                     EQ -> (False, "No water area")
-                     GT -> (True, "More board than ships")
+--cex1= mapM_ putStrLn pex1
 
+showIcon :: Icon -> String
+showIcon D = addDefault ++ [symbol] 
+showIcon S = addRed     ++ [symbol] ++ addDefault
+showIcon W = addBlue    ++ [symbol] ++ addDefault
 
--- toEnum 65 :: Char = 'A'
 -- (size Board, A::Int == 65)
 makeMatrixCoord ::(Int, Int) -> [[Coordinate]]
 makeMatrixCoord (0,_) = []
@@ -137,7 +145,6 @@ b4 = BoardCoord{getSizeCoord = 5, getCoordSquares = makeMatrixCoord (5, 65)}
 -- crea un nuevo data para enviar el error, con Maybe el error
 -- serie nothing pero ese valor no conlleva ninguna string de error
 
---RETURN LIST OF AXIS LARGER ENOUGTH TO PUT THE SHIP INSIDE
 axisShorter :: (Board, Ship) -> Coordinate-> [Axis]
 axisShorter (b , s) c = axisAvailable
         where
@@ -166,15 +173,20 @@ mapAxis (xs : xss) = head : tail
                 sz   = length xs
                 head = M.fromList $ zip [0..sz-1] xs
                 tail = mapAxis xss
-mapB1 = mapAxis $ getSquares b1
 
-mapBoard :: Map Size (Map Int Bool)
-mapBoard = M.fromList $ zip [0..(length mapB1-1)] mapB1
+mapB1 = mapAxis [[False,True],[False,False]]
 
-mapList = M.fromList $ zip [(1,'A'),(2,'C'),(3,'B')] [False,False,False]
-coordLook = M.lookup (3,'A') mapList
-
-c1 = M.lookup 0 mapBoard
+tryShoot :: String -> [Map Int Bool]-> (Bool,Maybe Coordinate)
+tryShoot [r, c] rowsMap = go charC
+        where 
+            charR = subtract 65 . fromEnum $ toUpper r
+            charC = readMaybe [c] :: Maybe Int   
+            go :: Maybe Int -> (Bool, Maybe Coordinate)
+            go Nothing   = (False, Nothing)
+            go (Just x)  = case M.lookup x (rowsMap !! charR) of
+                Just y  -> (y, Just (toUpper r,x)) 
+                
+c1 = tryShoot "a1" mapB1
 
 modifyAt :: Int -> (a -> a) -> [a] -> [a]
 modifyAt i f ls
@@ -221,3 +233,15 @@ totalShips :: [[Bool]] -> [Int]
 totalShips [] = [0]
 totalShips xs = foldr ((:) . length . filter (&& True)) [0] xs
        
+pb=addBlue++"+"++addDefault
+pr=addRed++"+"++addDefault
+
+colorCoord :: Coordinate -> Icon -> BoardColor -> BoardColor
+colorCoord (r,c) icon (BoardColor sz matChar) = BoardColor {getLength = sz, getIcons=matColor}
+        where
+                rInt  = fromEnum r -65
+                head  = take rInt matChar
+                modif = take c (matChar !! rInt) ++ [icon] ++ drop (c+1) (matChar !! rInt)
+                tail  = drop (rInt+1) matChar
+                matColor = head ++ [modif] ++ tail
+
