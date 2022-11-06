@@ -40,12 +40,15 @@ newShip b bCoord= do
                  if left-sz <= 0
                     then putStrLn "Not available space for that ship" >> main
                     else 
-                        searchVect (sum (totalShips b)) 0 sz szBoard b bCoord
+                        searchVect 0 sz szBoard b bCoord
             else putStrLn "Enter a valid size" >> newShip b bCoord
             
-                
-searchVect :: Int->Int-> Int -> Size -> [[Bool]] ->Board -> IO()            
-searchVect numShips count sz szBoard b bCoord = do
+
+randNum :: Int -> IO Int
+randNum i = randomRIO (0, i-1) :: IO Int
+               
+searchVect :: Int-> Int -> Size -> [[Bool]] ->Board -> IO()            
+searchVect count sz szBoard b bCoord = do
                 row <- randNum szBoard
                 col <- randNum szBoard
                 let coord  = searchCoord row col bCoord
@@ -56,7 +59,7 @@ searchVect numShips count sz szBoard b bCoord = do
                 if try > maxTries 
                     then putStrLn "Not finding ship place, try other game" >> main
                 else
-                    if null vect then searchVect numShips try sz szBoard b bCoord
+                    if null vect then searchVect try sz szBoard b bCoord
                     else 
                     do
                     putStrLn "Placing the ship..."
@@ -70,45 +73,38 @@ searchVect numShips count sz szBoard b bCoord = do
                         do
                         print matUpt
                         let matColor = makeBoardToPrint szBoard
-                        showBoard matColor >> userCoord numShips (numShips-5) matUpt matColor
+                        let numShips = sum (totalShips matUpt)
+                        showBoard matColor >> userCoord numShips (numShips+5) matUpt matColor
                 where 
                     checkNewShip :: String -> Bool
                     checkNewShip s | toUpper (head s) =='Y' 
                                          &&  length s == 1  = True 
                                    | otherwise = False
-
+n= sum (totalShips [[True, False],[False, True]])
 userCoord :: Int -> Int -> [[Bool]] ->BoardColor -> IO()
 userCoord hit water bBool bColor = do
-        putStrLn "Choose coordinates and try to sink (ex. A1)"
-        coord <- getLine
-        if not $ checkCoord coord (length bBool) then
-            putStrLn "Wrong coordinate range" >> userCoord hit water bBool bColor
-        else
-            do
+        if hit == 0 && water > 0 then 
+            putStrLn "You win! GAME OVER"
+        else if hit > 0 && water == 0 then
+            putStrLn "You loose! GAME OVER" 
+        else do
+            putStrLn "Choose coordinates and try to sink (ex. A1)"
+            coord <- getLine
+            if not $ checkCoord coord (length bBool) then
+                putStrLn "Wrong coordinate range" >> userCoord hit water bBool bColor
+            else do
                 case tryShoot coord (mapAxis bBool) of
                     ( _ , Nothing) -> userCoord hit water bBool bColor --check this, possible reset of bColor
-                    ( diana, Just rc) -> 
-                        if hit == 0 && water > 0 then 
-                            putStrLn "You win! GAME OVER"
-                        else if hit > 0 && water == 0 then
-                            putStrLn "You loose! GAME OVER" 
-                        else
-                            if diana then
-                                do
-                                let uptBoard = colorCoord rc S bColor
-                                showBoard uptBoard
-                                putStrLn "Diana" >> userCoord (hit-1) water bBool uptBoard
-                            else
-                                do
-                                let uptBoard = colorCoord rc W bColor
-                                showBoard uptBoard
-                                putStrLn "Water!" >> userCoord hit (water-1) bBool uptBoard
+                    ( diana, Just rc) -> if diana then
+                        do
+                        let uptBoard = colorCoord rc S bColor
+                        showBoard uptBoard
+                        putStrLn "Diana" >> userCoord (hit-1) water bBool uptBoard
+                        else do
+                            let uptBoard = colorCoord rc W bColor
+                            showBoard uptBoard
+                            putStrLn "Water!" >> userCoord hit (water-1) bBool uptBoard
 
-s1=showBoard (makeBoardToPrint 5)
---m1=colorCoord 
-
-randNum :: Int -> IO Int
-randNum i = randomRIO (0, i-1) :: IO Int
 
 -- Prints the current representation of the board state to the terminal:
 showBoard :: BoardColor -> IO ()
