@@ -2,6 +2,7 @@
 
 # First step : Haskell tolchain installation
 Follow recommended installation instructions: 
+    
     https://www.haskell.org/downloads/
     
 or just run in a terminal
@@ -9,9 +10,9 @@ or just run in a terminal
     curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh    
 
 # Run cabal to start playing
-Open a new terminal and go to the BattleShip folder, where must be the Haskell.cabal file
-Run next command to start:
-cabal run
+Open a new terminal and go to the BattleShip folder, where must be the Haskell.cabal file. Run next command to start:
+    
+    cabal run
 
 # Game rules
 First of all set the board dimensions nxn. There is a minumum size (5) and a maximum (25) because coordinates go from A to a maximum of Z.
