@@ -13,13 +13,10 @@ main = do
     putStrLn "Enter the size of the board (5 to 15):"
     ms <- getInt 
     case ms of
-    -- if a number isn't provided, print error and restart
         Nothing -> putStrLn "Enter a valid number" >> main
         Just s  -> if s >= minBoardSize && s <= maxBoardSize
-      -- if a valid number is provided within the accepted range, initiate the game
         then newShip [] (getSquares $ makeBoard s) (makeBoardCoord s)
 
-      -- otherwise print error and restart
         else putStrLn "Invalid board size" >> main
       
 getInt :: IO (Maybe Int)
@@ -72,8 +69,9 @@ searchVect  listC count sz szBoard b bCoord = do
                         do
                         let matColor = makeBoardToPrint szBoard
                         let numShips = sum (totalShips matUpt)
+                        let extra = div ((^2) szBoard - numShips) 2
                         showBoard (makeBoardToPrint szBoard)
-                        userCoord allCoord (numShips, numShips+extraBullets) [] matUpt matColor
+                        userCoord allCoord (numShips, numShips+extra) [] matUpt matColor
                 where 
                     checkNewShip :: [Char] -> Bool
                     checkNewShip [s] = toUpper s =='Y'       
@@ -107,17 +105,13 @@ userCoord listC (hit,water) lCoord bBool bColor = do
                             showBoard uptBoard
                             putStrLn "Water!" >> userCoord listC (hit, water-1) (insert coord lCoord) bBool uptBoard
 
--- Prints the current representation of the board state to the terminal:
 showBoard :: BoardColor -> IO ()
 showBoard b = mapM_ putStrLn allStrs
   where
     s       = getLength b
     sqs     = getIcons b
-    -- prepare the header string with numbered columns up to the board width
     header  = "  | " ++ intercalate " | " (map show [0 .. s - 1]) ++ " |"
-    -- combine header string with formatted board row strings prefixed by row letters
     allStrs = header : zipWith (:) (map (\x -> toEnum $ x + 65) [0 .. s - 1]) (map fmtRow sqs)
-    -- creates a formatted string representation of the row
     fmtRow :: Row -> String
     fmtRow r = " | " ++ intercalate " | " (map showIcon r) ++ " |"
 

@@ -1,6 +1,4 @@
 
---{-# LANGUAGE InstanceSigs #-}
---{-# LANGUAGE OverloadedStrings #-}
 module Lib where
 import qualified Data.Map as M
 import Data.Map (Map)
@@ -31,8 +29,6 @@ makeBoardToPrint :: Size -> BoardColor
 makeBoardToPrint s = BoardColor{ getLength =s
                    , getIcons = replicate s (replicate s D) 
                    }
-
---cex1= mapM_ putStrLn pex1
 
 showIcon :: Icon -> String
 showIcon D = addDefault ++ [symbol] 
@@ -74,12 +70,10 @@ vectorLength (r , c) b = [(xp, Xp ), (xn, Xn), (yp, Yp), (yn, Yn)]
                 yp = fromEnum r - 65 + 1 
                 yn = getSizeCoord b - yp + 1
                 
---CHANGE INPUTS [] AT FUNCTIOM, USING MAP IN THE CALLIN AVOID THAT
 compareShipVector ::  Ship -> (Int , Axis)-> Bool
 compareShipVector _ (0, _)  = False
 compareShipVector s (len,a)  = getSizes s <= len
 
-                        --check because resize of ships (_,1)
 
 availableSpace ::  Board -> Coordinate -> Axis -> Bool 
 availableSpace (Board _ b) (r, c) a = 
@@ -92,7 +86,6 @@ availableSpace (Board _ b) (r, c) a =
                         charNum = fromEnum r - 65
                         transposeBoard = transpose b
 
--- (length ship, BoardCoord) -> return axisAvail (using map)
 getAxisVectors :: (Int, Board ) -> (Coordinate, Axis) ->  [Coordinate]
 getAxisVectors (len, BoardCoord s b ) ((r, c), a) = 
         case a of
@@ -116,8 +109,6 @@ axisShorter (b , s) c = axisAvailable
                 listCoord     = M.keys filtZip 
                 axisAvailable = M.elems $ M.fromList listCoord
 
---RETURN LIST OF AXIS EMPTY (AND LARGER CHECKED PREVIUOSLY) FOR THE SHIP
--- Bool Board -> the random coord -> the return of axisShorter
 listAxisAvail :: Board -> Coordinate -> [Axis] -> [(Coordinate,Axis)]
 listAxisAvail _ _ [] = []
 listAxisAvail b c a = zip (replicate (length listAxis) c) listAxis
@@ -134,8 +125,6 @@ mapAxis (xs : xss) = head : tail
                 sz   = length xs
                 head = M.fromList $ zip [0..sz-1] xs
                 tail = mapAxis xss
-
-mapB1 = mapAxis [[False,True],[False,False]]
 
 tryShoot :: String -> [Map Int Bool]-> (Bool,Maybe Coordinate)
 tryShoot [r, c] rowsMap = go charC
@@ -156,7 +145,6 @@ modifyAt i f ls
     go n (x:xs) = x : go (n-1) xs
     go _ []     = []
 
---Place 1 coordinate of 1 ship
 fillBoardCoord :: [[Bool]] -> Coordinate -> [[Bool]]
 fillBoardCoord matrix (r,c) = newMatrix
         where
@@ -166,7 +154,6 @@ fillBoardCoord matrix (r,c) = newMatrix
                 tail  = drop (rInt+1) matrix
                 newMatrix = head ++ [modif] ++ tail
 
---Extract the result (matrix) of all coordinates of 1 ship 
 fillBoardShip ::  [[[Bool]]] ->[Coordinate] -> [[Bool]]
 fillBoardShip [m] cs = m
 fillBoardShip (m:ms) (c:cs)  = fillBoardShip (map (fillBoardCoord m) cs) cs
