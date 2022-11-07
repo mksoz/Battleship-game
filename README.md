@@ -1,8 +1,7 @@
 ## Battleship-game
 
 # First step : Haskell tolchain installation
-Follow recommended installation instructions: 
-    
+Follow recommended installation instructions:  
     https://www.haskell.org/downloads/
     
 or just run in a terminal
