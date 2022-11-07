@@ -1,6 +1,6 @@
 ## Battleship-game
 
-# First step : Haskell tolchain installation
+# First step : Haskell toolchain installation
 Follow recommended installation instructions:  
     https://www.haskell.org/downloads/
     
