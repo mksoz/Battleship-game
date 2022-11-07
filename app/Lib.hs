@@ -1,46 +1,20 @@
 
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
-module BattleShip where
+module Lib where
 import qualified Data.Map as M
 import Data.Map (Map)
 import Data.List
 import System.Random
 import Data.Char (toUpper)
 import Text.Read (readMaybe)
---import Types
-type Size = Int
-type Coordinate = (Char, Int)
-type Row      = [Icon]
-type Squares  = [Row]
-data Icon = D  | W | S  deriving(Eq, Read, Show)
-
-data Axis = Xp | Xn | Yp | Yn deriving(Show, Eq, Ord)
-data Board = Board{ getSize   :: Size,
-                       getSquares :: [[Bool]]}
-                | BoardCoord{ getSizeCoord   :: Size, getCoordSquares :: [[Coordinate]]} deriving(Show, Eq) 
-                    
-data Ship = Ship{ getSizes :: Size,
-                       getShipSquares :: [Bool]} deriving (Show, Eq)
-data BoardColor = BoardColor{ getLength    :: Int
-                   , getIcons :: Squares
-                   }deriving(Show)
-
-listSizeShip = [5,3,4,2] 
-minBoardSize = 5
-maxBoardSize = 25
-symbol       = '*'
-addBlue      = "\ESC[36m" 
-addRed       = "\ESC[35m"
-addDefault   = "\ESC[0m"
--- end Types
+import Types
 
 makeBoard :: Size  -> Board 
 makeBoard s = Board{ getSize = smin
                     ,getSquares = replicate smin (replicate smin False)
                     }
             where smin = min maxBoardSize (max s minBoardSize)
-b1 = makeBoard 6
 
 makeBoardCoord :: Size  -> Board 
 makeBoardCoord s = BoardCoord{ getSizeCoord = smin
@@ -52,8 +26,6 @@ makeShip :: Size -> Ship
 makeShip s = Ship { getSizes = s
                     , getShipSquares = replicate s False
                     }
-
-listships = map makeShip listSizeShip
 
 makeBoardToPrint :: Size -> BoardColor
 makeBoardToPrint s = BoardColor{ getLength =s
@@ -77,8 +49,6 @@ makeMatrixCoord (x,n) = first : second
                 second | (n-63) > x = makeMatrixCoord (0, n+1) --63 because at first time always gona be 2 rows  
                        | otherwise  = makeMatrixCoord (x, n+1) 
 
-b2 = BoardCoord{getSizeCoord = getSize b1, getCoordSquares = makeMatrixCoord (getSize b1, 65)}
-
 checkCoord :: String -> Int -> Bool
 checkCoord [r,c] max = cRow && go charC
         where 
@@ -88,6 +58,7 @@ checkCoord [r,c] max = cRow && go charC
             go :: Maybe Int -> Bool
             go Nothing   = False
             go (Just x)  = x>=0 && x<= max-1
+checkCoord _ _ = False
 
 searchCoord :: Int -> Int -> Board -> Coordinate
 searchCoord r c b = elem
@@ -135,16 +106,6 @@ getAxisVectors (len, BoardCoord s b ) ((r, c), a) =
                         takeRow = b !! rowChar
                         takeCol = transposeBoard !! c
 
-b4 = BoardCoord{getSizeCoord = 5, getCoordSquares = makeMatrixCoord (5, 65)}
-
---Usando Map.fromList convertimos lista en map list, es lo mismo pero
---se puede acceder a los elementos de la lista con funciones de map
---util para fucntors y monoids, clase del 13/09 VER!! Functors.hs
-
--- Para depurar errores Applicative3.hs clase del 15/09
--- crea un nuevo data para enviar el error, con Maybe el error
--- serie nothing pero ese valor no conlleva ninguna string de error
-
 axisShorter :: (Board, Ship) -> Coordinate-> [Axis]
 axisShorter (b , s) c = axisAvailable
         where
@@ -186,8 +147,6 @@ tryShoot [r, c] rowsMap = go charC
             go (Just x)  = case M.lookup x (rowsMap !! charR) of
                 Just y  -> (y, Just (toUpper r,x)) 
                 
-c1 = tryShoot "a1" mapB1
-
 modifyAt :: Int -> (a -> a) -> [a] -> [a]
 modifyAt i f ls
   | i < 0 = ls
@@ -219,6 +178,8 @@ fillBoardAllShips m (s : ss) = fillBoardAllShips matOneShip ss
                                 matPerCoord = map (fillBoardCoord m) s
                                 matOneShip  = fillBoardShip matPerCoord s
 
+checkList :: [String] -> String-> [Bool]
+checkList xs rc = foldr (\ x -> (:) (x == rc)) [False] xs
 
 placeShip :: (Coordinate, Ship) -> (Board, Board)-> [Coordinate]
 placeShip (coord,s) (bBool, bCoord)  = oneVect
@@ -232,9 +193,6 @@ placeShip (coord,s) (bBool, bCoord)  = oneVect
 totalShips :: [[Bool]] -> [Int]
 totalShips [] = [0]
 totalShips xs = foldr ((:) . length . filter (&& True)) [0] xs
-       
-pb=addBlue++"+"++addDefault
-pr=addRed++"+"++addDefault
 
 colorCoord :: Coordinate -> Icon -> BoardColor -> BoardColor
 colorCoord (r,c) icon (BoardColor sz matChar) = BoardColor {getLength = sz, getIcons=matColor}

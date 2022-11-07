@@ -1,13 +1,12 @@
+
 module Main where
 import Text.Read (readMaybe)
-import Data.List (intercalate)
-import BattleShip
+import Data.List (intercalate, insert)
+import Lib
 import Data.Char (toUpper)
---import Types 
+import Types 
 import System.Random
-maxShipSize = 5
-minShipSize = 1
-maxTries = 1000
+
 
 main :: IO ()
 main = do
@@ -18,7 +17,7 @@ main = do
         Nothing -> putStrLn "Enter a valid number" >> main
         Just s  -> if s >= minBoardSize && s <= maxBoardSize
       -- if a valid number is provided within the accepted range, initiate the game
-        then newShip (getSquares $ makeBoard s) (makeBoardCoord s)
+        then newShip [] (getSquares $ makeBoard s) (makeBoardCoord s)
 
       -- otherwise print error and restart
         else putStrLn "Invalid board size" >> main
@@ -27,84 +26,86 @@ getInt :: IO (Maybe Int)
 getInt = do 
     readMaybe <$> getLine
       
-newShip :: [[Bool]] -> Board-> IO()
-newShip b bCoord= do
+newShip :: [Coordinate] -> [[Bool]] -> Board-> IO()
+newShip listC b bCoord= do
     let left = (^2) (getSizeCoord bCoord) - sum (totalShips b) 
     putStrLn  ("Size of ship 1 to 5, remaining "++show left)
     let szBoard = getSizeCoord bCoord
     msg <- getInt 
     case msg of
-        Nothing -> putStrLn "Enter a valid size"  >> newShip b bCoord
+        Nothing -> putStrLn "Enter a valid size"  >> newShip listC b bCoord
         Just sz -> if sz>= 1 && sz<= szBoard then
                 do
                  if left-sz <= 0
                     then putStrLn "Not available space for that ship" >> main
                     else 
-                        searchVect 0 sz szBoard b bCoord
-            else putStrLn "Enter a valid size" >> newShip b bCoord
-            
+                        searchVect listC 0 sz szBoard b bCoord
+            else putStrLn "Enter a valid size" >> newShip listC b bCoord    
 
 randNum :: Int -> IO Int
 randNum i = randomRIO (0, i-1) :: IO Int
                
-searchVect :: Int-> Int -> Size -> [[Bool]] ->Board -> IO()            
-searchVect count sz szBoard b bCoord = do
+searchVect :: [Coordinate] -> Int -> Int -> Size -> [[Bool]] ->Board -> IO()            
+searchVect  listC count sz szBoard b bCoord = do
                 row <- randNum szBoard
                 col <- randNum szBoard
                 let coord  = searchCoord row col bCoord
                 let bBool  = Board{getSize=szBoard, getSquares = b}
                 putStrLn "Searching place at board" 
-                let try = (+1) count
-                let vect   = placeShip (coord, makeShip sz) (bBool,bCoord)
+                let try  = (+1) count
+                let vect = placeShip (coord, makeShip sz) (bBool,bCoord)
                 if try > maxTries 
                     then putStrLn "Not finding ship place, try other game" >> main
                 else
-                    if null vect then searchVect try sz szBoard b bCoord
+                    if null vect then searchVect listC try sz szBoard b bCoord
                     else 
                     do
                     putStrLn "Placing the ship..."
                     let matUpt = fillBoardAllShips b [vect]
-                -- Ask for introduce another ship
+                    let allCoord = listC ++ vect
+
                     putStrLn "Create another ship Yes:Y No:Press any key"
                     nwSh <- getLine
                     if checkNewShip nwSh then
-                         putStrLn"New Ship" >> newShip matUpt bCoord
+                         putStrLn "New Ship" >> newShip allCoord matUpt bCoord
                     else 
                         do
                         print matUpt
                         let matColor = makeBoardToPrint szBoard
                         let numShips = sum (totalShips matUpt)
-                        showBoard matColor >> userCoord numShips (numShips+5) matUpt matColor
+                        userCoord allCoord (numShips, numShips+5) [] matUpt matColor
                 where 
-                    checkNewShip :: String -> Bool
-                    checkNewShip s | toUpper (head s) =='Y' 
-                                         &&  length s == 1  = True 
-                                   | otherwise = False
-n= sum (totalShips [[True, False],[False, True]])
-userCoord :: Int -> Int -> [[Bool]] ->BoardColor -> IO()
-userCoord hit water bBool bColor = do
+                    checkNewShip :: [Char] -> Bool
+                    checkNewShip [s] = toUpper s =='Y'       
+                    checkNewShip _   = False
+
+userCoord :: [Coordinate] -> (Int,Int) -> [String] -> [[Bool]] -> BoardColor -> IO()
+userCoord listC (hit,water) lCoord bBool bColor = do
         if hit == 0 && water > 0 then 
             putStrLn "You win! GAME OVER"
         else if hit > 0 && water == 0 then
-            putStrLn "You loose! GAME OVER" 
+            putStrLn "You loose! GAME OVER" >>
+            showResult listC (makeBoardToPrint (getLength bColor))
         else do
-            putStrLn "Choose coordinates and try to sink (ex. A1)"
+            putStrLn "Choose coordinates and try to sink (ex. A1):"
             coord <- getLine
-            if not $ checkCoord coord (length bBool) then
-                putStrLn "Wrong coordinate range" >> userCoord hit water bBool bColor
+            if or (checkList lCoord coord) then 
+                putStrLn "Coordinate already set" >> userCoord listC (hit,water) lCoord bBool bColor
             else do
-                case tryShoot coord (mapAxis bBool) of
-                    ( _ , Nothing) -> userCoord hit water bBool bColor --check this, possible reset of bColor
-                    ( diana, Just rc) -> if diana then
-                        do
-                        let uptBoard = colorCoord rc S bColor
-                        showBoard uptBoard
-                        putStrLn "Diana" >> userCoord (hit-1) water bBool uptBoard
+                if not $ checkCoord coord (length bBool) then
+                    putStrLn "Wrong coordinate range" >> userCoord listC (hit,water) lCoord bBool bColor
+                else do
+                    -- ALOME SEGUNDA FUNCION PARA ESTO
+                    case tryShoot coord (mapAxis bBool) of
+                        ( _ , Nothing) -> userCoord listC (hit,water) lCoord bBool bColor
+                        ( diana, Just rc) -> if diana then do
+                            let uptBoard = colorCoord rc S bColor
+                            showBoard uptBoard
+                            putStrLn "Diana" >> userCoord listC (hit-1, water) (insert coord lCoord) bBool uptBoard
                         else do
                             let uptBoard = colorCoord rc W bColor
                             showBoard uptBoard
-                            putStrLn "Water!" >> userCoord hit (water-1) bBool uptBoard
-
+                            putStrLn "Water!" >> userCoord listC (hit, water-1) (insert coord lCoord) bBool uptBoard
 
 -- Prints the current representation of the board state to the terminal:
 showBoard :: BoardColor -> IO ()
@@ -120,4 +121,8 @@ showBoard b = mapM_ putStrLn allStrs
     fmtRow :: Row -> String
     fmtRow r = " | " ++ intercalate " | " (map showIcon r) ++ " |"
 
-
+showResult :: [Coordinate]  -> BoardColor ->IO ()
+showResult [] bc = showBoard bc
+showResult (x:xs) bc = showResult xs lastBoard
+    where
+        lastBoard = colorCoord x S bc
