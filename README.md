@@ -2,11 +2,11 @@
 
 # First step : Haskell tolchain installation
 Follow recommended installation instructions: 
-https://www.haskell.org/downloads/
+    https://www.haskell.org/downloads/
     
-    or just run in a terminal
+or just run in a terminal
 
-curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh    
+    curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh    
 
 # Run cabal to start playing
 Open a new terminal and go to the BattleShip folder, where must be the Haskell.cabal file
