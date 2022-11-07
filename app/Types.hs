@@ -24,6 +24,7 @@ maxBoardSize = 25 ::Int
 maxShipSize = 5 :: Int
 minShipSize = 1 :: Int
 maxTries = 1000 :: Int
+extraBullets = 5 :: Int 
 symbol       = '*'
 addBlue      = "\ESC[36m" 
 addRed       = "\ESC[35m"

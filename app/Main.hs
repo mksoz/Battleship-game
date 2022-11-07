@@ -3,9 +3,9 @@ module Main where
 import Text.Read (readMaybe)
 import Data.List (intercalate, insert)
 import Lib
-import Data.Char (toUpper)
 import Types 
 import System.Random
+import Data.Char (toUpper)
 
 
 main :: IO ()
@@ -28,9 +28,9 @@ getInt = do
       
 newShip :: [Coordinate] -> [[Bool]] -> Board-> IO()
 newShip listC b bCoord= do
-    let left = (^2) (getSizeCoord bCoord) - sum (totalShips b) 
-    putStrLn  ("Size of ship 1 to 5, remaining "++show left)
+    let left    = (^2) (getSizeCoord bCoord) - sum (totalShips b) 
     let szBoard = getSizeCoord bCoord
+    putStrLn  ("Size of ship 1 to "++show szBoard++", remaining "++show left++" spaces")
     msg <- getInt 
     case msg of
         Nothing -> putStrLn "Enter a valid size"  >> newShip listC b bCoord
@@ -70,10 +70,10 @@ searchVect  listC count sz szBoard b bCoord = do
                          putStrLn "New Ship" >> newShip allCoord matUpt bCoord
                     else 
                         do
-                        print matUpt
                         let matColor = makeBoardToPrint szBoard
                         let numShips = sum (totalShips matUpt)
-                        userCoord allCoord (numShips, numShips+5) [] matUpt matColor
+                        showBoard (makeBoardToPrint szBoard)
+                        userCoord allCoord (numShips, numShips+extraBullets) [] matUpt matColor
                 where 
                     checkNewShip :: [Char] -> Bool
                     checkNewShip [s] = toUpper s =='Y'       
@@ -101,7 +101,7 @@ userCoord listC (hit,water) lCoord bBool bColor = do
                         ( diana, Just rc) -> if diana then do
                             let uptBoard = colorCoord rc S bColor
                             showBoard uptBoard
-                            putStrLn "Diana" >> userCoord listC (hit-1, water) (insert coord lCoord) bBool uptBoard
+                            putStrLn "It's a HIT!" >> userCoord listC (hit-1, water) (insert coord lCoord) bBool uptBoard
                         else do
                             let uptBoard = colorCoord rc W bColor
                             showBoard uptBoard

@@ -1,6 +1,6 @@
 
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE OverloadedStrings #-}
+--{-# LANGUAGE InstanceSigs #-}
+--{-# LANGUAGE OverloadedStrings #-}
 module Lib where
 import qualified Data.Map as M
 import Data.Map (Map)

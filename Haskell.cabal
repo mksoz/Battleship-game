@@ -60,7 +60,9 @@ executable Haskell
     -- Other library packages from which modules are imported.
     build-depends:    base,
                       random,
-                      containers
+                      containers,
+                      text,
+                      dependent-map
     -- Directories containing source files.
     hs-source-dirs:   app
 
